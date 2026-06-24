@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.funstop.model.Product
 import io.funstop.uiState.ProductUiState
+import io.funstop.utils.Utils.formatTime
 import io.funstop.viewmodel.ProductViewModel
 
 @Composable
@@ -31,6 +32,8 @@ fun StartScreen(
 ) {
 
     val state by viewModel.uiState.collectAsState()
+
+    val timers by viewModel.timers.collectAsState()
 
     when (state) {
         is ProductUiState.Loading -> {
@@ -52,6 +55,7 @@ fun StartScreen(
                         val product = products[index]
                         ProductItem(
                             product = product,
+                            timers,
                             onClick = {
 //                                onProductClick(product.id)
                                 viewModel.selectProduct(products[index].id)
@@ -79,8 +83,10 @@ fun StartScreen(
 @Composable
 fun ProductItem(
     product: Product,
+    timers: Map<Int, Long>,
     onClick: () -> Unit
 ) {
+    val remaining = timers[product.id] ?: 0L
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -99,6 +105,7 @@ fun ProductItem(
         ) {
             Text(text = product.title)
             Text(text = "₹${product.price}")
+            Text(text = formatTime(remaining))
         }
     }
 }

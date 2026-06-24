@@ -11,7 +11,9 @@ class LocalRepository @Inject constructor(private val dao: ProductDao) {
 
     fun getProducts(): Flow<List<Product>> {
         return dao.getProducts().map { list ->
-            list.map { ProductMapper.toDomain(it) }
+            list.map {
+                ProductMapper.toDomain(it)
+            }
         }
     }
 

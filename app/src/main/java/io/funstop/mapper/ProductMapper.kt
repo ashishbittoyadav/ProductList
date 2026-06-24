@@ -4,6 +4,7 @@ import io.funstop.model.Dimensions
 import io.funstop.model.Meta
 import io.funstop.model.Product
 import io.funstop.model.entity.ProductEntity
+import kotlin.time.Duration.Companion.hours
 
 object ProductMapper {
 
@@ -20,7 +21,7 @@ object ProductMapper {
             stock = product.stock,
             images = product.images.joinToString(","),
             tags = product.tags.joinToString(","),
-            flashEndTime = System.currentTimeMillis() + (2*60*60*1000)
+            flashEndTime = System.currentTimeMillis() + product.id.hours.inWholeMilliseconds
         )
     }
 
