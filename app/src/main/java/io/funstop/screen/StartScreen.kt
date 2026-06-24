@@ -13,16 +13,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import coil.compose.AsyncImage
+import io.funstop.mapper.ProductMapper
 import io.funstop.model.Product
 import io.funstop.uiState.ProductUiState
 import io.funstop.utils.Utils.formatTime
 import io.funstop.viewmodel.ProductViewModel
+import io.funstop.work_manager.EventUploadWorker
 
 @Composable
 fun StartScreen(
@@ -47,22 +53,25 @@ fun StartScreen(
 
         is ProductUiState.Success -> {
 
-            val products = (state as ProductUiState.Success).products
+            Box(modifier = Modifier.padding(innerPadding)) {
 
-            Box(modifier = Modifier.padding( innerPadding)) {
+                val products = viewModel.pagedProducts.collectAsLazyPagingItems()
+
                 LazyColumn {
-                    items(products.size) { index ->
-                        val product = products[index]
-                        ProductItem(
-                            product = product,
-                            timers,
-                            onClick = {
-//                                onProductClick(product.id)
-                                viewModel.selectProduct(products[index].id)
-                            }
-                        )
+                    items(products.itemCount) { index ->
+                        products[index]?.let { product ->
+                            ProductItem(
+                                product = ProductMapper.toDomain(product),
+                                timers = timers,
+                                onClick = {
+                                    viewModel.selectProduct(product.id)
+                                },
+                                viewModel = viewModel // pass this
+                            )
+                        }
                     }
                 }
+
             }
         }
 
@@ -76,6 +85,7 @@ fun StartScreen(
                 Text(text = message)
             }
         }
+
         else -> {}
     }
 }
@@ -84,9 +94,15 @@ fun StartScreen(
 fun ProductItem(
     product: Product,
     timers: Map<Int, Long>,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    viewModel: ProductViewModel
 ) {
     val remaining = timers[product.id] ?: 0L
+
+    LaunchedEffect(product.id) {
+        viewModel.startTimer(product.id, ProductMapper.toEntity(product).flashEndTime)
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -105,7 +121,8 @@ fun ProductItem(
         ) {
             Text(text = product.title)
             Text(text = "₹${product.price}")
-            Text(text = formatTime(remaining))
+            if (remaining > 0)
+                Text(text = formatTime(remaining))
         }
     }
 }

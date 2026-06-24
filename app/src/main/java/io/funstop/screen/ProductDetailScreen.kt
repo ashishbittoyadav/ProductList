@@ -43,6 +43,7 @@ fun ProductDetailScreen(
                 .products
                 .find { it.id == productId }
         }
+
         else -> null
     }
 
@@ -120,7 +121,7 @@ fun ProductDetailContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = product.brand,
+            text = product.brand?:"",
             style = MaterialTheme.typography.bodyMedium
         )
 
@@ -146,10 +147,11 @@ fun ProductDetailContent(
 
         Text("Stock: ${product.stock}")
 
-        Row {
-            Text("Flash Sale Ends in:")
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = formatTime(remaining))
-        }
+        if (remaining > 0)
+            Row {
+                Text("Flash Sale Ends in:")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = formatTime(remaining))
+            }
     }
 }
