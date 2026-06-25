@@ -2,9 +2,11 @@ package io.funstop.application
 
 import android.app.Application
 import android.util.Log
+import androidx.compose.ui.unit.Constraints
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -24,7 +26,9 @@ class ProductApplication : Application(), Configuration.Provider {
 
         val request = PeriodicWorkRequestBuilder<EventUploadWorker>(
             15, TimeUnit.MINUTES
-        ).build()
+        )
+            .setConstraints(androidx.work.Constraints(requiresCharging = true, requiredNetworkType = NetworkType.UNMETERED))
+            .build()
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "event_upload",

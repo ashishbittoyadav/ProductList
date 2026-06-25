@@ -31,6 +31,19 @@ work_manager    → Background workers (Upload event logs)
 
 ---
 
+### Architectural Diagram
+```
+UI (Compose)
+   ↓
+ViewModel (StateFlow)
+   ↓
+Repository
+   ↓        ↓
+Room DB   Retrofit API
+   ↓
+WorkManager (Sync Worker)
+```
+
 ## 📊 User Event Flow
 
 ### 🧭 Event Logging Flow
@@ -58,8 +71,12 @@ EventUploadWorker → EventRepository → EventDao → Room DB
 * Fetches all unsynced events (`isSynced = false`).
 * Uploads events to the server.
 * On success:
-
     * Updates events with `isSynced = true`
+* Runs every 15 minutes
+* Requires:
+  * Unmetered network (Wi-Fi)
+  * Device charging
+* Automatically retries on failure
 
 ---
 
@@ -94,3 +111,33 @@ EventUploadWorker → EventRepository → EventDao → Room DB
 * Retrofit (Networking)
 
 ---
+
+## ⏱ Flash Deal Countdown
+
+- Countdown handled in ViewModel
+- Uses Kotlin Flow emitting every 1 second
+- Survives configuration changes
+- Ensures no memory leaks
+
+## 🚀 Setup Instructions
+
+1. Clone the repository
+2. Open in Android Studio
+3. Sync Gradle
+4. Run on emulator or device
+5. Internet required for initial data fetch
+
+## 🗂️ Generate Apk
+```
+  ./gradlew assemble
+  // for release and debug both
+  ./gradlew assembleDebug 
+  // for debug only
+```
+
+## 🏆 Why This Architecture?
+
+- Scalable for large apps
+- Easy testing
+- Clear separation of concerns
+- Supports offline-first apps
