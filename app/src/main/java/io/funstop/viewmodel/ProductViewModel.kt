@@ -28,59 +28,76 @@ class ProductViewModel @Inject constructor(
     private val eventRepository: EventRepository
 ) : ViewModel() {
 
+    // ---------------- UI STATE ----------------
     private val _uiState = MutableStateFlow<ProductUiState>(ProductUiState.Loading)
     val uiState: StateFlow<ProductUiState> = _uiState.asStateFlow()
 
-    private val _eventFlow = MutableSharedFlow<UiEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    // ---------------- PAGING ----------------
+    val pagedProducts: Flow<PagingData<ProductEntity>> =
+        Pager(
+            config = PagingConfig(
+                pageSize = 10,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                localRepository.getPagingSource()
+            }
+        ).flow.cachedIn(viewModelScope)
 
+    // ---------------- MANUAL PAGINATION ----------------
+    private var currentPage = 1
+    private var isLoading = false
+    private var isLastPage = false
+
+    init {
+        loadNextPage()
+    }
+
+    fun loadNextPage() {
+        if (isLoading || isLastPage) return
+
+        isLoading = true
+
+        viewModelScope.launch {
+            try {
+                // show loading only for first page
+                if (currentPage == 1) {
+                    _uiState.emit(ProductUiState.Loading)
+                }
+
+                val response = webRepository.getProducts(currentPage)
+                val products = response.products
+
+                if (products.isEmpty()) {
+                    isLastPage = true
+
+                    if (currentPage == 1) {
+                        _uiState.emit(ProductUiState.Error("no item found"))
+                    }
+                } else {
+                    localRepository.insertProducts(products)
+                    currentPage++
+
+                    _uiState.emit(ProductUiState.Success(products))
+                }
+
+            } catch (e: Exception) {
+                if (currentPage == 1) {
+                    _uiState.emit(
+                        ProductUiState.Error(e.message ?: "Something went wrong")
+                    )
+                }
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    // ---------------- TIMER ----------------
     private val _timers = MutableStateFlow<Map<Int, Long>>(emptyMap())
     val timers: StateFlow<Map<Int, Long>> = _timers
 
-    val pagedProducts: Flow<PagingData<ProductEntity>> =
-        localRepository.getPagingSource()
-            .let { pagingSourceFactory ->
-                Pager(
-                    config = PagingConfig(
-                        pageSize = 10,
-                        enablePlaceholders = false
-                    ),
-                    pagingSourceFactory = { pagingSourceFactory }
-                ).flow
-            }
-            .cachedIn(viewModelScope)
-
-    init {
-        fetchFromApi()
-    }
-    private fun fetchFromApi() {
-        webRepository.getProducts()
-            .enqueue(object : Callback<ProductResponse> {
-                override fun onResponse(
-                    call: Call<ProductResponse?>,
-                    response: Response<ProductResponse?>
-                ) {
-                    if (response.isSuccessful) {
-                        response.body()?.let { data ->
-                            viewModelScope.launch {
-                                localRepository.insertProducts(data.products)
-                                _uiState.emit(ProductUiState.Success(data.products))
-                            }
-                        }
-                    }
-                }
-
-                override fun onFailure(call: Call<ProductResponse?>, t: Throwable) {
-                    viewModelScope.launch {
-                        _uiState.emit(
-                            ProductUiState.Error(t.message ?: "Something went wrong")
-                        )
-                    }
-                }
-            })
-    }
     fun startTimer(productId: Int, endTimeMillis: Long) {
-        // Prevent duplicate timers
         if (_timers.value.containsKey(productId)) return
 
         viewModelScope.launch {
@@ -92,7 +109,7 @@ class ProductViewModel @Inject constructor(
         }
     }
 
-    fun countdownFlow(endTimeMillis: Long): Flow<Long> = flow {
+    private fun countdownFlow(endTimeMillis: Long): Flow<Long> = flow {
         while (true) {
             val remaining = endTimeMillis - System.currentTimeMillis()
 
@@ -102,17 +119,24 @@ class ProductViewModel @Inject constructor(
             } else {
                 emit(remaining)
             }
-            delay(1000.milliseconds)
+
+            delay(1000)
         }
     }
+
+    // ---------------- EVENTS ----------------
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
+
     fun selectProduct(productId: Int) {
         logClick(productId)
+
         viewModelScope.launch {
             _eventFlow.emit(UiEvent.NavigationToDetail(productId))
         }
     }
 
-    fun logClick(productId: Int){
+    private fun logClick(productId: Int) {
         viewModelScope.launch {
             eventRepository.logEvent("product_click", "id=$productId")
         }

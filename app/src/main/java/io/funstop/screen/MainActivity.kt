@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -70,6 +72,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.onPrimaryFixedVariant)
                                 .statusBarsPadding()
+                                .padding(20.dp)
                                 .fillMaxWidth(),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
@@ -80,7 +83,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                 ) { innerPadding ->
-                    AppNavHost(innerPadding, viewModel, navigationController)
+                    Box(
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        AppNavHost(innerPadding, viewModel, navigationController)
+                    }
                 }
             }
         }
