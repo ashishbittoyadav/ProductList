@@ -1,15 +1,19 @@
 package io.funstop.screen
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -17,17 +21,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import dagger.hilt.android.AndroidEntryPoint
 import io.funstop.navigation.Screen
 import io.funstop.navigation.UiEvent
 import io.funstop.ui.theme.ProductAppTheme
 import io.funstop.viewmodel.ProductViewModel
+import io.funstop.work_manager.EventUploadWorker
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -62,6 +72,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.onPrimaryFixedVariant)
                                 .statusBarsPadding()
+                                .padding(20.dp)
                                 .fillMaxWidth(),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
@@ -72,7 +83,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                 ) { innerPadding ->
-                    AppNavHost(innerPadding, viewModel, navigationController)
+                    Box(
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        AppNavHost(innerPadding, viewModel, navigationController)
+                    }
                 }
             }
         }

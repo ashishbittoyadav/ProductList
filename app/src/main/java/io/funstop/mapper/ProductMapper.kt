@@ -16,12 +16,12 @@ object ProductMapper {
             price = product.price,
             rating = product.rating,
             brand = product.brand,
-            category = product.category,
+            category = product.category?:"",
             thumbnail = product.thumbnail,
             stock = product.stock,
             images = product.images.joinToString(","),
             tags = product.tags.joinToString(","),
-            flashEndTime = System.currentTimeMillis() + product.id.hours.inWholeMilliseconds
+            flashEndTime = if(product.id%2==0) System.currentTimeMillis() + product.id.hours.inWholeMilliseconds else 0L
         )
     }
 
@@ -40,6 +40,7 @@ object ProductMapper {
             // Default / dummy values for now
             availabilityStatus = "",
             discountPercentage = 0.0,
+//            dimensions = Dimensions(0.0, 0.0, 0.0),
             dimensions = Dimensions(0.0, 0.0, 0.0),
             images = if (entity.images.isEmpty()) emptyList() else entity.images.split(","),
             meta = Meta("", "", "", updatedAt = ""),
@@ -50,7 +51,8 @@ object ProductMapper {
             sku = "",
             tags = if (entity.tags.isEmpty()) emptyList() else entity.tags.split(","),
             warrantyInformation = "",
-            weight = 0
+            weight = 0.0,
+            flashEndTime = entity.flashEndTime
         )
     }
 }

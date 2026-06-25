@@ -6,5 +6,5 @@ import javax.inject.Inject
 
 class WebRepository @Inject constructor(val productApi: ProductApi) {
 
-    fun getProducts() = productApi.getProducts()
+    suspend fun getProducts(page: Int) = productApi.getProducts(page)
 }
